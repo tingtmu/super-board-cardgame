@@ -117,6 +117,15 @@ def test_card_costing_more_than_energy_is_rejected_and_nothing_changes():
     assert battle.log == before
 
 
+def test_card_costing_exactly_the_current_energy_is_accepted():
+    battle = make_battle(("big",))
+    battle.begin_turn()
+    battle.player.energy = 4
+    battle.play_card("big")
+    assert battle.player.energy == 0
+    assert battle.enemy.hp == 30 - 10
+
+
 def test_card_not_in_hand_is_rejected():
     battle = make_battle(("strike",))
     battle.begin_turn()
