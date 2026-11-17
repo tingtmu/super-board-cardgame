@@ -148,7 +148,7 @@ def test_played_card_goes_to_discard():
     assert battle.player.discard == ["strike"]
 
 
-def test_card_using_an_unmodelled_effect_is_rejected_before_anything_changes():
+def test_status_card_with_no_status_table_is_rejected_before_anything_changes():
     cards = sample_cards()
     cards["venom"] = Card(
         id="venom",
@@ -158,7 +158,7 @@ def test_card_using_an_unmodelled_effect_is_rejected_before_anything_changes():
     )
     battle = Battle(cards, player_with(("venom",)), ENEMY, seed=1, hand_size=1)
     battle.begin_turn()
-    with pytest.raises(UnsupportedEffect, match="apply_status"):
+    with pytest.raises(UnsupportedEffect, match="unknown status 'poison'"):
         battle.play_card("venom")
     assert battle.enemy.hp == 30
     assert battle.player.hand == ["venom"]

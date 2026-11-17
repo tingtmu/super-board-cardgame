@@ -8,15 +8,30 @@ Targeting: ``damage`` hits the chosen target (default: the enemy). ``shield``
 and ``draw`` apply to the player who played the card. Shield lasts until the
 start of its owner's next turn.
 
-Status effects (``apply_status``) arrive with milestone 3; until then a card
-that uses one is rejected before anything changes.
+Status effects (``apply_status``) are data-driven: a card names a status id from
+the statuses table (``data/statuses.json``) and a stack count. Rules:
+
+- Applying a status that is already active adds its stacks and resets its
+  duration to the table's duration.
+- The status step (after the enemy phase, before the next turn) ticks every
+  combatant: ``poison`` deals its stacks as damage (shield absorbs it), then
+  each status loses one turn and is removed at zero.
+- ``weak`` on the attacker cuts that attacker's outgoing card damage to 75%
+  (rounded down).
+
+A card that names an unknown status, or uses an effect the engine does not
+model, is rejected before anything changes.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 
-from cardgame.models import Card, Unit
+from cardgame.models import Card, Status, Unit
 from cardgame.rng import make_rng
+
+WEAK_DAMAGE_PERCENT = 75
+POISON = "poison"
+WEAK = "weak"
 
 
 class CardRejected(Exception):
@@ -25,6 +40,12 @@ class CardRejected(Exception):
 
 class UnsupportedEffect(Exception):
     """A card uses an effect the engine does not model yet."""
+
+
+@dataclass
+class ActiveStatus:
+    stacks: int
+    turns_left: int
 
 
 @dataclass
@@ -37,6 +58,7 @@ class Combatant:
     draw_pile: list[str] = field(default_factory=list)
     hand: list[str] = field(default_factory=list)
     discard: list[str] = field(default_factory=list)
+    statuses: dict[str, ActiveStatus] = field(default_factory=dict)
 
     @property
     def id(self) -> str:
@@ -53,6 +75,7 @@ class Battle:
         *,
         hand_size: int = 5,
         enemy_policy: Callable[["Battle"], None] | None = None,
+        statuses: Mapping[str, Status] | None = None,
     ) -> None:
         if player.id == enemy.id:
             raise ValueError(f"player and enemy share the id '{player.id}'")
@@ -61,6 +84,7 @@ class Battle:
                 if card_id not in cards:
                     raise ValueError(f"unknown card '{card_id}' in deck of {unit.id}")
         self.cards = cards
+        self.statuses: dict[str, Status] = dict(statuses or {})
         self.rng = make_rng(seed)
         self.hand_size = hand_size
         self.enemy_policy = enemy_policy
@@ -108,7 +132,7 @@ class Battle:
         target_id = self.enemy.id if target is None else target
         if target_id not in self.units:
             raise CardRejected(f"unknown target '{target_id}'")
-        _check_supported(card)
+        self._check_supported(card)
 
         player.hand.remove(card_id)
         player.energy -= card.cost
@@ -118,16 +142,22 @@ class Battle:
 
     def resolve(self, card: Card, caster: Combatant, target: Combatant) -> None:
         """Apply a card's effects in order. Also used by enemy policies."""
-        _check_supported(card)
+        self._check_supported(card)
         for effect in card.effects:
             if effect.kind == "damage":
-                self._damage(target, effect.amount)
+                amount = effect.amount
+                if WEAK in caster.statuses:
+                    amount = amount * WEAK_DAMAGE_PERCENT // 100
+                    self.log.append(f"{caster.id} is weak: damage {effect.amount} -> {amount}")
+                self._damage(target, amount)
             elif effect.kind == "shield":
                 caster.shield += effect.amount
                 self.log.append(f"{caster.id} gains {effect.amount} shield")
             elif effect.kind == "draw":
                 self.draw(caster, effect.amount)
                 self.log.append(f"{caster.id} draws {effect.amount}")
+            elif effect.kind == "apply_status":
+                self._apply_status(target, effect.status_id, effect.amount)
 
     def enemy_act(self) -> None:
         """Enemy phase. Enemy shield clears here; the policy (if any) then acts."""
@@ -137,13 +167,53 @@ class Battle:
             return
         self.enemy_policy(self)
 
+    def status_step(self) -> None:
+        """Tick every combatant's statuses: poison damage, then duration; expired ones go."""
+        for who in (self.player, self.enemy):
+            for status_id in list(who.statuses):
+                active = who.statuses[status_id]
+                if status_id == POISON:
+                    self._damage(who, active.stacks)
+                active.turns_left -= 1
+                if active.turns_left <= 0:
+                    del who.statuses[status_id]
+                    self.log.append(f"{who.id} {status_id} expires")
+
     def end_turn(self) -> None:
-        """Discard the hand, run the enemy phase, then start the next player turn."""
+        """Discard the hand, run the enemy phase and status step, then start the next player turn."""
         self.player.discard.extend(self.player.hand)
         self.player.hand.clear()
         self.log.append("player ends turn")
         self.enemy_act()
+        self.status_step()
         self.begin_turn()
+
+    def _apply_status(self, target: Combatant, status_id: str, stacks: int) -> None:
+        base = self.statuses[status_id]
+        active = target.statuses.get(status_id)
+        if active is None:
+            active = ActiveStatus(stacks=0, turns_left=base.duration)
+            target.statuses[status_id] = active
+        active.stacks += stacks
+        active.turns_left = base.duration
+        self.log.append(
+            f"{target.id} gains {stacks} {status_id} "
+            f"(now {active.stacks}, {active.turns_left} turns)"
+        )
+
+    def _check_supported(self, card: Card) -> None:
+        for effect in card.effects:
+            if effect.kind in ("damage", "shield", "draw"):
+                continue
+            if effect.kind == "apply_status":
+                if effect.status_id not in self.statuses:
+                    raise UnsupportedEffect(
+                        f"card '{card.id}' applies unknown status '{effect.status_id}'"
+                    )
+                continue
+            raise UnsupportedEffect(
+                f"card '{card.id}' uses '{effect.kind}', which is not modelled yet"
+            )
 
     def _damage(self, target: Combatant, amount: int) -> None:
         absorbed = min(target.shield, amount)
@@ -164,9 +234,3 @@ def _new_combatant(unit: Unit) -> Combatant:
     )
 
 
-def _check_supported(card: Card) -> None:
-    for effect in card.effects:
-        if effect.kind not in ("damage", "shield", "draw"):
-            raise UnsupportedEffect(
-                f"card '{card.id}' uses '{effect.kind}', which is not modelled yet"
-            )
