@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from cardgame.loader import DataError, load_cards, load_statuses, load_units
-from cardgame.models import Card, Effect, Status, Unit
+from cardgame.models import Card, Effect, Move, Status, Unit
 
 DATA = Path(__file__).resolve().parents[1] / "data"
 
@@ -48,7 +48,15 @@ def test_statuses_and_units_load_from_json():
             max_hp=80,
             max_energy=3,
             deck=("strike", "strike", "defend", "battle_trance"),
-        )
+        ),
+        Unit(
+            id="slime",
+            name="Slime",
+            max_hp=30,
+            max_energy=1,
+            deck=(),
+            moves=(Move(card="strike", weight=2), Move(card="defend", weight=1)),
+        ),
     ]
 
 

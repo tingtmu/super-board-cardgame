@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from cardgame.models import EFFECT_KINDS, Card, Effect, Status, Unit
+from cardgame.models import EFFECT_KINDS, Card, Effect, Move, Status, Unit
 
 
 class DataError(ValueError):
@@ -59,6 +59,22 @@ def _parse_effect(path: Path, where: str, raw: Any) -> Effect:
     if kind == "apply_status":
         status_id = _require(path, where, raw, "status", str)
     return Effect(kind=kind, amount=amount, status_id=status_id)
+
+
+def _parse_moves(path: Path, where: str, raw_list: Any) -> tuple[Move, ...]:
+    if not isinstance(raw_list, list):
+        raise DataError(f"{path}: {where}: 'moves' must be a list")
+    moves = []
+    for index, raw in enumerate(raw_list):
+        item = f"{where}: moves[{index}]"
+        if not isinstance(raw, dict):
+            raise DataError(f"{path}: {item} must be an object")
+        card = _require(path, item, raw, "card", str)
+        weight = _require(path, item, raw, "weight", int)
+        if weight <= 0:
+            raise DataError(f"{path}: {item}: 'weight' must be positive")
+        moves.append(Move(card=card, weight=weight))
+    return tuple(moves)
 
 
 def load_cards(path: Path) -> list[Card]:
@@ -115,6 +131,7 @@ def load_units(path: Path) -> list[Unit]:
         deck_raw = _require(path, where, raw, "deck", list)
         if not all(isinstance(card_id, str) for card_id in deck_raw):
             raise DataError(f"{path}: {where}: 'deck' must be a list of card ids")
+        moves = _parse_moves(path, where, raw["moves"]) if "moves" in raw else ()
         units.append(
             Unit(
                 id=unit_id,
@@ -122,6 +139,7 @@ def load_units(path: Path) -> list[Unit]:
                 max_hp=_require(path, where, raw, "max_hp", int),
                 max_energy=_require(path, where, raw, "max_energy", int),
                 deck=tuple(deck_raw),
+                moves=moves,
             )
         )
     return units

@@ -6,6 +6,17 @@
       "max_hp": 80,
       "max_energy": 3,
       "deck": ["strike", "strike", "defend", "battle_trance"]
+    },
+    {
+      "id": "slime",
+      "name": "Slime",
+      "max_hp": 30,
+      "max_energy": 1,
+      "deck": [],
+      "moves": [
+        {"card": "strike", "weight": 2},
+        {"card": "defend", "weight": 1}
+      ]
     }
   ]
 }
