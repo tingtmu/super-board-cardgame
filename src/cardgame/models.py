@@ -32,9 +32,18 @@ class Card:
 
 
 @dataclass(frozen=True)
+class Move:
+    """One entry in an enemy's move list: play ``card`` with relative ``weight``."""
+
+    card: str
+    weight: int
+
+
+@dataclass(frozen=True)
 class Unit:
     id: str
     name: str
     max_hp: int
     max_energy: int
     deck: tuple[str, ...] = field(default_factory=tuple)
+    moves: tuple[Move, ...] = field(default_factory=tuple)

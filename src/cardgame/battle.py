@@ -21,6 +21,15 @@ the statuses table (``data/statuses.json``) and a stack count. Rules:
 
 A card that names an unknown status, or uses an effect the engine does not
 model, is rejected before anything changes.
+
+Enemy AI: an enemy unit may list ``moves`` in its data (``data/units.json``),
+each a card id with a weight. When no ``enemy_policy`` is given, the enemy
+phase picks one move per turn with the seeded RNG (weighted) and resolves
+that card against the player. An enemy with no moves and no policy idles.
+A new enemy is therefore a data-file change only.
+
+``Battle.winner`` is the id of the side that reached 0 HP (``None`` while
+both are alive). If both reach 0 HP the player is reported as defeated.
 """
 
 from collections.abc import Callable, Mapping
@@ -85,6 +94,10 @@ class Battle:
                     raise ValueError(f"unknown card '{card_id}' in deck of {unit.id}")
         self.cards = cards
         self.statuses: dict[str, Status] = dict(statuses or {})
+        for move in enemy.moves:
+            if move.card not in cards:
+                raise ValueError(f"unknown card '{move.card}' in moves of {enemy.id}")
+            self._check_supported(cards[move.card])
         self.rng = make_rng(seed)
         self.hand_size = hand_size
         self.enemy_policy = enemy_policy
@@ -162,10 +175,25 @@ class Battle:
     def enemy_act(self) -> None:
         """Enemy phase. Enemy shield clears here; the policy (if any) then acts."""
         self.enemy.shield = 0
-        if self.enemy_policy is None:
+        if self.enemy_policy is not None:
+            self.enemy_policy(self)
+            return
+        moves = self.enemy.unit.moves
+        if not moves:
             self.log.append("enemy idles")
             return
-        self.enemy_policy(self)
+        pick = self.rng.choices(moves, weights=[move.weight for move in moves])[0]
+        self.log.append(f"{self.enemy.id} picks {pick.card}")
+        self.resolve(self.cards[pick.card], caster=self.enemy, target=self.player)
+
+    @property
+    def winner(self) -> str | None:
+        """Id of the winning side, or ``None`` while both units are alive."""
+        if self.player.hp == 0:
+            return self.enemy.id
+        if self.enemy.hp == 0:
+            return self.player.id
+        return None
 
     def status_step(self) -> None:
         """Tick every combatant's statuses: poison damage, then duration; expired ones go."""
