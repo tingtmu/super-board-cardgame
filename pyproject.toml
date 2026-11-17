@@ -1,0 +1,13 @@
+[project]
+name = "super-board-cardgame"
+version = "0.1.0"
+description = "Turn-based card roguelike battle engine (pure logic, cards as data)"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

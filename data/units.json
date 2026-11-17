@@ -1,0 +1,11 @@
+{
+  "units": [
+    {
+      "id": "player",
+      "name": "Player",
+      "max_hp": 80,
+      "max_energy": 3,
+      "deck": ["strike", "strike", "defend", "battle_trance"]
+    }
+  ]
+}
