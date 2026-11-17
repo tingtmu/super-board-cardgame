@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # super-board-cardgame
 
 Toy project to try [super-board](https://github.com/EricTechPro/super-board) end to end.
@@ -29,4 +31,3 @@ Build the project described in `spec.md`: a turn-based card roguelike skill/batt
 ## Working rules
 - The session that runs `/super-board run` is an orchestrator, not a worker: it dispatches
   waves and reports, it does not build, test or fix cards itself.
-- Don't push, merge or change board/repo settings unless the user asks.

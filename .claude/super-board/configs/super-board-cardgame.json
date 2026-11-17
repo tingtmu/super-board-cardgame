@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "description": "super-board-cardgame build board",
+  "project": {"owner": "tingtmu", "title": "Super-board-cardgame board", "number": 1},
+  "worker_backend": "workflow",
+  "host": "claude",
+  "model_tier": "medium",
+  "target": {"type": "repo", "url": null},
+  "repo": {"path": ".", "remote": "https://github.com/tingtmu/super-board-cardgame"},
+  "base_branch": "staging",
+  "timezone": "Asia/Taipei",
+  "columns": ["Backlog", "Ready", "Building", "QA", "Review", "Blocked", "Done"],
+  "labels": ["qa", "bug", "feature"],
+  "paths": {"project_md": "docs/super-board/PROJECT.md", "pre_flight_md": "docs/super-board/pre-flight.md", "runs_dir": "docs/super-board/runs"},
+  "merge_policy": {"default": "auto", "auto_max_lines": 600,
+    "size_exclude": ["**/uv.lock", "**/*.lock", "**/__snapshots__/**", "**/*.snap"],
+    "always_human": {
+      "money": {"labels": ["money", "payments", "billing", "pricing"], "paths": ["**/billing/**", "**/payments/**"], "keywords": ["stripe.", "payment_intent"]},
+      "auth": {"labels": ["auth", "security"], "paths": ["**/auth/**"], "keywords": ["jwt.sign", "password_hash"]},
+      "schema": {"labels": ["schema", "destructive"], "paths": [], "keywords": ["drop table", "drop column", "truncate table"]}},
+    "allow_auto_on_production": false},
+  "migrations": {"globs": [], "allowed_envs": [], "target_env": "staging", "commands": {}, "checks": {}, "human_steps": []},
+  "verify_commands": ["uv sync --quiet && uv run pytest -q"],
+  "collect": {"sources": ["github"], "window_days": 14, "custom": []},
+  "notifications": {"channel": "session", "chat_id": null, "bot_identity": "tingtmu"}
+}

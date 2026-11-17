@@ -1,0 +1,5 @@
+AC1 Playing a card spends energy and applies its effects to the target  -> PASS  tests/test_battle.py::test_playing_a_card_spends_energy_and_damages_the_enemy
+AC2 A card costing more than current energy is rejected                 -> PASS  tests/test_battle.py::test_card_costing_more_than_energy_is_rejected_and_nothing_changes
+AC3 Same seed and same plays give an identical game log in two runs     -> PASS  tests/test_battle.py::test_same_seed_and_same_plays_give_identical_log
+AC4 Each turn-flow step has a unit test                                 -> PASS  draw, begin_turn, play_card, resolve, enemy_act, end_turn all have tests
+Added (test-gap, Medium)  exact-energy boundary accepted                -> PASS  tests/test_battle.py::test_card_costing_exactly_the_current_energy_is_accepted

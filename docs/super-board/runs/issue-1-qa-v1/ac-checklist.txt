@@ -1,0 +1,6 @@
+AC1 uv sync --quiet && uv run pytest -q passes: 14 passed (pytest-output.txt)
+AC2 Card, Effect, Status, Unit load from JSON; invalid file raises DataError: tests/test_loader.py (test_statuses_and_units_load_from_json, test_invalid_json_raises_clear_error, test_missing_field_names_the_card_and_field, test_unknown_effect_kind_is_rejected, test_wrong_type_is_rejected, test_missing_top_level_list_is_rejected, test_missing_file_is_a_data_error)
+AC3 3 sample cards as data only, each loaded by a test: data/cards.json; tests/test_loader.py::test_sample_cards_load_as_data, test_strike_is_a_damage_card, test_defend_is_a_shield_card, test_battle_trance_is_a_draw_card
+AC4 seeded RNG identical for same seed: tests/test_rng.py::test_same_seed_gives_identical_sequence
+Test-gap check: no High gaps found in AC coverage
+Security pass: targeted manual check of src/cardgame/loader.py (no eval, exec, pickle, subprocess, yaml, os.system); pr-security-review skill not run
