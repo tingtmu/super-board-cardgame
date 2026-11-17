@@ -1,0 +1,6 @@
+{
+  "statuses": [
+    {"id": "poison", "name": "Poison", "duration": 3},
+    {"id": "weak", "name": "Weak", "duration": 2}
+  ]
+}

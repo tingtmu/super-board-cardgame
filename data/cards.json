@@ -1,0 +1,22 @@
+{
+  "cards": [
+    {
+      "id": "strike",
+      "name": "Strike",
+      "cost": 1,
+      "effects": [{"kind": "damage", "amount": 6}]
+    },
+    {
+      "id": "defend",
+      "name": "Defend",
+      "cost": 1,
+      "effects": [{"kind": "shield", "amount": 5}]
+    },
+    {
+      "id": "battle_trance",
+      "name": "Battle Trance",
+      "cost": 0,
+      "effects": [{"kind": "draw", "amount": 2}]
+    }
+  ]
+}
