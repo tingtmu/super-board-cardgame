@@ -12,6 +12,10 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-delete-outside.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-protected-push.py"
           }
         ]
       },
@@ -54,6 +58,18 @@
           }
         ]
       }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(gh project:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh pr:*)",
+      "Bash(bash .claude/bin/super-board-merge-gate.sh:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(bash .claude/bin/super-board-env-check.sh:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv sync:*)"
     ]
   }
 }
