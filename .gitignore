@@ -7,3 +7,12 @@
 .claude/super-board/upgrade.json
 __pycache__/
 .claude/settings.json.bak-*
+
+# Python
+.venv/
+.pytest_cache/
+*.pyc
+*.egg-info/
+
+# super-board worktrees and local scratch
+.claude/worktrees/

@@ -35,8 +35,8 @@ if (input.variant && input.variant !== 'full') {
 // Lane for a card entering at Ready: the planner's `lane`, else its labels.
 const labelsOf = (card) => (card.labels || []).map((l) => String(l).toLowerCase())
 const readyLane = (card) => card.lane || (labelsOf(card).includes('qa') ? 'qa' : 'build')
-if (input.tier && !['low', 'medium', 'high'].includes(input.tier)) {
-  throw new Error(`super-board-wave: unknown tier "${input.tier}" — use low | medium | high`)
+if (input.tier && !['low', 'medium', 'high', 'haiku'].includes(input.tier)) {
+  throw new Error(`super-board-wave: unknown tier "${input.tier}" — use low | medium | high | haiku`)
 }
 
 let halted = false
@@ -173,10 +173,12 @@ const lanePrompt = (lane, card) => [
 //   low    (run --low):  haiku / sonnet / opus
 //   medium (default):    sonnet / opus / session
 //   high   (run --high): opus for every card
+//   haiku  (local, run all-haiku): haiku for every card
 const LADDERS = {
   low: { low: 'haiku', medium: 'sonnet', high: 'opus' },
   medium: { low: 'sonnet', medium: 'opus', high: undefined },
   high: { low: 'opus', medium: 'opus', high: 'opus' },
+  haiku: { low: 'haiku', medium: 'haiku', high: 'haiku' },
 }
 const ladder = LADDERS[input.tier || 'medium']
 const tierFor = (cls) => (cls ? ladder[cls.complexity] : undefined)
@@ -232,7 +234,7 @@ const PREFLIGHT_SCHEMA = {
   required: ['verdicts'],
 }
 const PREFLIGHT_BATCH = 5
-const preflightModel = (input.tier || 'medium') === 'low' ? 'haiku' : 'sonnet'
+const preflightModel = ['low', 'haiku'].includes(input.tier || 'medium') ? 'haiku' : 'sonnet'
 const preflightPrompt = (batch) => [
   SKILLS_CHECK(batch),
   READ_FAILURE,
